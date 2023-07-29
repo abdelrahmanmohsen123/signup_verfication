@@ -3,13 +3,14 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Mail\VerificationEmail;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\Mail;
+use App\Jobs\SendVerificationEmailJob;
+
+use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-use Laravel\Sanctum\HasApiTokens;
-
-use Illuminate\Support\Facades\Mail;
-use App\Mail\VerificationEmail;
 
 class User extends Authenticatable
 {
@@ -54,6 +55,8 @@ class User extends Authenticatable
 
     public function sendVerificationEmail()
     {
+        // dispatch(new SendVerificationEmailJob($this));
+        // not work redis with me because my app dowsnt connect with the redis server
         Mail::to($this->email)->send(new VerificationEmail($this));
     }
 

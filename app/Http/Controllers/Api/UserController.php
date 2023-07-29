@@ -6,70 +6,78 @@ namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Services\UserService;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\loginUserRequest;
+use App\Http\Requests\Auth\SignupUserRequest;
+use App\Http\Requests\Auth\VerifyEmailUserRequest;
+use App\Http\Resources\Users\UserResource;
+use App\Traits\ApiResponder;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use PHPUnit\Framework\MockObject\Api;
 
 class UserController extends Controller
 {
-    //
+    use ApiResponder;
+
     protected $userService;
+
+
 
     public function __construct(UserService $userService)
     {
         $this->userService = $userService;
     }
 
-    public function signup(Request $request)
+    public function signup(SignupUserRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8',
+
+
+        $user = $this->userService->signUp($request->validated());
+
+        return $this->respondResource(new UserResource($user),[
+            'message' => 'Signup Success!',
+
+
         ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 422);
-        }
-
-        $user = $this->userService->signUp($request->all());
-
-        return response()->json(['message' => 'User created successfully'], 201);
     }
 
-    public function verifyEmail(Request $request)
+    public function verifyEmail(VerifyEmailUserRequest $request)
     {
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|string|email|max:255',
-            'otp' => 'required|string|min:6|max:6',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['error' => $validator->errors()], 422);
-        }
 
         $is_verified = $this->userService->verifyEmail($request->input('email'), $request->input('otp'));
 
         if (!$is_verified) {
-            return response()->json(['error' => 'Email verification failed'], 401);
+            return $this->respondWithError('Email verification failed',401);
         }
 
-        return response()->json(['message' => 'Email verified successfully']);
+        return $this->respondWithSuccess('Email verification success');
+
     }
 
-    public function login(Request $request)
+    public function login(loginUserRequest $request)
     {
-        $credentials = $request->only('email', 'password');
+        try{
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            if ($user->is_verified) {
-                $token = $user->createToken('auth_token')->plainTextToken;
-                return response()->json(['token' => $token]);
+            $credentials = $request->only('email', 'password');
+
+            if (Auth::attempt($credentials)) {
+                $user = Auth::user();
+                // dd($user);
+                if ($user->is_verified) {
+                    $token = $user->createToken('auth_token')->plainTextToken;
+                    return $this->respondResource(new UserResource($user), [
+                        'message' => 'Login Success!',
+                        'token' => $token,
+
+                    ]);
+                }
+                return $this->respondWithError('Email not verified',401);
             }
-            return response()->json(['error' => 'Email not verified'], 401);
-        }
 
-        return response()->json(['error' => 'Unauthorized'], 401);
+
+        } catch (\Exception $ex) {
+            return $this->setStatusCode(422)->respondWithError($ex->getMessage());
+        }
     }
 
 }

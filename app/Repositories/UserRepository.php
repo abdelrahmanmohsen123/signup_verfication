@@ -7,15 +7,15 @@ use App\Models\User;
 
 class UserRepository{
     public function createUser($data){
-        $user = User::create($data);
-        return $user;
+        return User::create($data);
+       
 
     }
 
     public function getUserByEmail($email){
 
-        $user = User::where('email',$email)->get();
-        return $user;
+        return User::where('email',$email)->first();
+
 
     }
 
