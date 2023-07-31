@@ -33,6 +33,6 @@ class SendVerificationEmailJob implements ShouldQueue
     public function handle()
     {
 
-         Mail::to($this->user->email)->send(new VerificationEmail($this->user));
+         Mail::to($this->user->email)->queue(new VerificationEmail($this->user));
     }
 }
