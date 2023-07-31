@@ -55,9 +55,10 @@ class User extends Authenticatable
 
     public function sendVerificationEmail()
     {
-        // dispatch(new SendVerificationEmailJob($this));
-        // not work redis with me because my app dowsnt connect with the redis server
-        Mail::to($this->email)->send(new VerificationEmail($this));
+        dispatch(new SendVerificationEmailJob($this));
+        // not work redis with me because my app dowsnt connect with the redis server by redis
+        //use this if yo want send email as ablock
+        // Mail::to($this->email)->send(new VerificationEmail($this));
     }
 
     public function verifyEmail($otp)
